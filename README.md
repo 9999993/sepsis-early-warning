@@ -31,45 +31,117 @@
 
 ## 🏗️ 系统架构
 
+```mermaid
+graph TB
+    subgraph "🖥️ 前端展示层"
+        A[Flask + Chart.js]
+        A --> A1[📈 风险趋势图]
+        A --> A2[💓 生命体征监测]
+        A --> A3[📊 特征重要性]
+        A --> A4[🔍 预测原因分析]
+    end
+    
+    subgraph "⚡ API层"
+        B[Flask Routes]
+        B --> B1["/api/start<br/>开始模拟"]
+        B --> B2["/api/next<br/>生成下一小时"]
+        B --> B3["/api/status<br/>获取状态"]
+        B --> B4["/api/performance<br/>获取性能"]
+    end
+    
+    subgraph "🧠 核心逻辑层"
+        C1[数据生成<br/>gen_hour]
+        C2[模型预测<br/>do_predict]
+        C3[结果分析<br/>基于模型输出]
+        C1 --> C2 --> C3
+    end
+    
+    subgraph "🔬 模型层"
+        D[SepsisLSTM]
+        D --> D1[LayerNorm]
+        D --> D2[BiLSTM×2]
+        D --> D3[Attention]
+        D --> D4[Classifier]
+        D1 --> D2 --> D3 --> D4
+    end
+    
+    A <-->|"HTTP请求"| B
+    B -->|"调用"| C1
+    C2 -->|"使用"| D
+    
+    style A fill:#3b82f6,stroke:#1d4ed8,color:#fff
+    style B fill:#10b981,stroke:#059669,color:#fff
+    style C1 fill:#f59e0b,stroke:#d97706,color:#fff
+    style C2 fill:#f59e0b,stroke:#d97706,color:#fff
+    style C3 fill:#f59e0b,stroke:#d97706,color:#fff
+    style D fill:#8b5cf6,stroke:#7c3aed,color:#fff
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        前端展示层                                │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Flask + Chart.js                                        │  │
-│  │  - 风险趋势图                                            │  │
-│  │  - 生命体征监测                                          │  │
-│  │  - 特征重要性（基于模型输出）                              │  │
-│  │  - 预测原因分析                                          │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ API调用
-┌─────────────────────────────────────────────────────────────────┐
-│                      Flask后端 (app.py)                         │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  /api/start/<scenario>  开始模拟                         │  │
-│  │  /api/next/<pid>        生成下一小时数据                  │  │
-│  │  /api/status            获取模型状态                     │  │
-│  │  /api/performance       获取性能指标                     │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ 调用
-┌─────────────────────────────────────────────────────────────────┐
-│                      核心逻辑层                                  │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌────────────────┐  │
-│  │  数据生成       │  │  模型预测       │  │  结果分析      │  │
-│  │  gen_patient()  │→│  do_predict()   │→│  基于模型输出  │  │
-│  │  gen_hour()     │  │                 │  │  生成分析文本  │  │
-│  └─────────────────┘  └─────────────────┘  └────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ 使用
-┌─────────────────────────────────────────────────────────────────┐
-│                      模型层 (SepsisLSTM)                        │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  输入: [batch, 12, 12] (12时间步 × 12生理指标)           │  │
-│  │  架构: LayerNorm → BiLSTM → Attention → Classifier       │  │
-│  │  输出: 脓毒症概率 (0-1)                                  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+
+### 数据流
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 用户
+    participant F as 🖥️ 前端
+    participant A as ⚡ API
+    participant G as 📊 数据生成
+    participant M as 🧠 模型
+    participant V as 📈 可视化
+    
+    U->>F: 点击"脓毒症患者仿真"
+    F->>A: POST /api/start/sepsis
+    A->>G: 生成患者基线
+    G-->>A: 返回患者ID
+    A-->>F: 返回初始数据
+    
+    loop 每小时
+        U->>F: 点击"前进一小时"
+        F->>A: POST /api/next/pid
+        A->>G: 生成下一小时数据
+        G->>M: 输入12小时序列
+        M-->>G: 返回风险概率
+        G-->>A: 返回完整数据
+        A-->>F: 返回预测结果
+        F->>V: 更新图表和分析
+    end
+```
+
+### 模型架构
+
+```mermaid
+graph LR
+    subgraph "输入层"
+        I["[batch, 12, 12]<br/>12时间步 × 12指标"]
+    end
+    
+    subgraph "特征处理"
+        LN[LayerNorm]
+        LSTM1[BiLSTM Layer 1]
+        LSTM2[BiLSTM Layer 2]
+        I --> LN --> LSTM1 --> LSTM2
+    end
+    
+    subgraph "注意力机制"
+        ATTN[Temporal Attention]
+        LSTM2 --> ATTN
+    end
+    
+    subgraph "分类器"
+        FC1[Linear 128→64]
+        RELU1[ReLU + Dropout]
+        FC2[Linear 64→32]
+        RELU2[ReLU + Dropout]
+        FC3[Linear 32→1]
+        SIG[Sigmoid]
+        ATTN --> FC1 --> RELU1 --> FC2 --> RELU2 --> FC3 --> SIG
+    end
+    
+    O["输出<br/>脓毒症概率 0-1"]
+    SIG --> O
+    
+    style I fill:#3b82f6,color:#fff
+    style O fill:#10b981,color:#fff
+    style ATTN fill:#f59e0b,color:#fff
 ```
 
 ---
@@ -132,6 +204,33 @@ python3 app.py
 
 #### 预测分布与指标汇总
 ![Prediction Analysis](models/prediction_analysis.png)
+
+---
+
+## 🖥️ 可视化界面
+
+### 首页 - 系统概览
+
+![Homepage](docs/homepage.png)
+
+展示数据集统计、模型性能指标、系统架构等信息。
+
+### 监测页面 - 实时预警
+
+![Monitoring](docs/monitoring.png)
+
+实时监测界面，展示：
+- 风险趋势图
+- 生命体征监测
+- 12小时预警概率
+- 特征重要性分析
+- 预测原因说明
+
+### 监测页面 - 预警状态
+
+![Monitoring Warning](docs/monitoring_warning.png)
+
+脓毒症患者预警状态，展示模型如何识别异常指标。
 
 ---
 
