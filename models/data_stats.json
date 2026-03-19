@@ -1,0 +1,7 @@
+{
+  "total_patients": 5000,
+  "sepsis_patients": 721,
+  "train_patients": 3500,
+  "val_patients": 750,
+  "test_patients": 750
+}

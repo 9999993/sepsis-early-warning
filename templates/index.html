@@ -1,0 +1,109 @@
+<!DOCTYPE html><html><head><meta charset=UTF-8><title>脓毒症12小时预警系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;background:#0a0f1a;color:#e0e0e0}
+.nav{background:#1a1f2e;padding:20px 60px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(96,165,250,.2)}
+.logo{font-size:24px;font-weight:700;background:linear-gradient(135deg,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav a{color:#9ca3af;text-decoration:none;margin-left:30px;font-size:16px}
+.nav a.active{color:#60a5fa;font-weight:600}
+.hero{text-align:center;padding:80px 40px 60px;background:linear-gradient(180deg,#0d1117,#0a0f1a)}
+.hero h1{font-size:56px;font-weight:800;background:linear-gradient(135deg,#60a5fa,#34d399,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:15px}
+.hero p{font-size:20px;color:#9ca3af}
+.metrics{display:flex;justify-content:center;gap:60px;padding:50px;background:rgba(96,165,250,.03)}
+.metric{text-align:center}
+.metric-value{font-size:56px;font-weight:800;margin-bottom:8px}
+.metric-blue{color:#60a5fa}.metric-green{color:#34d399}.metric-yellow{color:#fbbf24}
+.metric-label{font-size:18px;color:#9ca3af}.metric-sub{font-size:13px;color:#6b7280;margin-top:4px}
+.content{padding:60px;max-width:1200px;margin:0 auto}
+.section-title{font-size:28px;font-weight:700;margin-bottom:30px;display:flex;align-items:center;gap:12px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:50px}
+.card{background:#1a1f2e;border:1px solid #2d3748;border-radius:16px;padding:25px;transition:all .3s}
+.card:hover{border-color:#60a5fa;transform:translateY(-3px)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.card-title{font-size:16px;font-weight:600}
+.badge{padding:4px 10px;border-radius:15px;font-size:11px;font-weight:600}
+.badge-blue{background:rgba(96,165,250,.2);color:#60a5fa}
+.badge-green{background:rgba(52,211,153,.2);color:#34d399}
+.badge-yellow{background:rgba(251,191,36,.2);color:#fbbf24}
+.badge-purple{background:rgba(168,85,247,.2);color:#a855f7}
+.card-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(45,55,72,.5);font-size:13px}
+.card-row:last-child{border-bottom:none}
+.card-label{color:#9ca3af}.card-value{font-weight:600}
+.perf{background:#1a1f2e;border:1px solid #2d3748;border-radius:20px;padding:40px;margin-bottom:50px}
+.perf-header{text-align:center;margin-bottom:30px}
+.perf-title{font-size:24px;font-weight:700;margin-bottom:8px}
+.perf-sub{color:#6b7280;font-size:14px}
+.perf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}
+.perf-item{background:#0f1419;border-radius:12px;padding:25px;text-align:center;border-left:4px solid}
+.perf-auc{border-color:#60a5fa}.perf-f1{border-color:#34d399}.perf-prec{border-color:#f472b6}.perf-rec{border-color:#fbbf24}
+.perf-value{font-size:36px;font-weight:800;margin-bottom:8px}
+.perf-auc .perf-value{color:#60a5fa}.perf-f1 .perf-value{color:#34d399}.perf-prec .perf-value{color:#f472b6}.perf-rec .perf-value{color:#fbbf24}
+.perf-label{font-size:14px;color:#9ca3af}.perf-desc{font-size:12px;color:#6b7280;margin-top:4px}
+.action{background:linear-gradient(135deg,rgba(96,165,250,.1),rgba(52,211,153,.05));border:1px solid rgba(96,165,250,.3);border-radius:20px;padding:50px;display:flex;justify-content:space-between;align-items:center;margin-bottom:50px}
+.action h3{font-size:28px;margin-bottom:10px}.action p{color:#9ca3af;font-size:16px}
+.action-btn{display:inline-flex;align-items:center;gap:12px;padding:20px 40px;font-size:18px;font-weight:700;background:linear-gradient(135deg,#60a5fa,#3b82f6);color:#fff;text-decoration:none;border-radius:12px;transition:all .3s}
+.action-btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(59,130,246,.3)}
+.warning{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:16px;padding:30px;display:flex;gap:15px}
+.warning-icon{font-size:28px}.warning h4{color:#fbbf24;margin-bottom:10px;font-size:18px}.warning p{color:#d1d5db;line-height:1.8;font-size:14px}
+.footer{text-align:center;padding:50px;color:#4b5563;border-top:1px solid #2d3748}
+</style></head><body>
+<div class=nav>
+<div class=logo>🏥 脓毒症12小时预警系统</div>
+<div><a href=/>概览</a><a href=/monitoring class=active>实时监测</a></div>
+</div>
+<div class=hero>
+<h1>脓毒症12小时早期预警系统</h1>
+<p>Sepsis 12-Hour Early Warning System · BiLSTM + Attention深度学习</p>
+</div>
+<div class=metrics>
+<div class=metric><div class=metric-value metric-blue>6,000</div><div class=metric-label>训练患者数</div><div class=metric-sub>15%脓毒症发生率</div></div>
+<div class=metric><div class=metric-value metric-green>89.4%</div><div class=metric-label>测试集AUC</div><div class=metric-sub>12小时预警性能</div></div>
+<div class=metric><div class=metric-value metric-yellow>12h</div><div class=metric-label>提前预警时间</div><div class=metric-sub>为干预争取时间</div></div>
+</div>
+<div class=content>
+<div class=section-title>📊 数据集详情</div>
+<div class=cards>
+<div class=card>
+<div class=card-header><div class=card-title>训练数据</div><span class="badge badge-blue">TRAIN</span></div>
+<div class=card-row><span class=card-label>患者数</span><span class=card-value>4,200</span></div>
+<div class=card-row><span class=card-label>记录数</span><span class=card-value>176,073</span></div>
+<div class=card-row><span class=card-label>阳性率</span><span class=card-value>10.8%</span></div>
+</div>
+<div class=card>
+<div class=card-header><div class=card-title>验证数据</div><span class="badge badge-green">VAL</span></div>
+<div class=card-row><span class=card-label>患者数</span><span class=card-value>900</span></div>
+<div class=card-row><span class=card-label>记录数</span><span class=card-value>37,933</span></div>
+<div class=card-row><span class=card-label>阳性率</span><span class=card-value>12.3%</span></div>
+</div>
+<div class=card>
+<div class=card-header><div class=card-title>测试数据</div><span class="badge badge-yellow">TEST</span></div>
+<div class=card-row><span class=card-label>患者数</span><span class=card-value>900</span></div>
+<div class=card-row><span class=card-label>记录数</span><span class=card-value>37,798</span></div>
+<div class=card-row><span class=card-label>阳性率</span><span class=card-value>10.1%</span></div>
+</div>
+<div class=card>
+<div class=card-header><div class=card-title>汇总</div><span class="badge badge-purple">TOTAL</span></div>
+<div class=card-row><span class=card-label>总患者</span><span class=card-value>6,000</span></div>
+<div class=card-row><span class=card-label>脓毒症患者</span><span class=card-value>916 (15.3%)</span></div>
+<div class=card-row><span class=card-label>序列长度</span><span class=card-value>12小时</span></div>
+</div>
+</div>
+<div class=perf>
+<div class=perf-header><div class=perf-title>🎯 模型测试集性能</div><div class=perf-sub>基于900名独立测试患者的评估结果</div></div>
+<div class=perf-grid>
+<div class="perf-item perf-auc"><div class=perf-value>89.4%</div><div class=perf-label>AUC-ROC</div><div class=perf-desc>综合判别能力</div></div>
+<div class="perf-item perf-f1"><div class=perf-value>79.8%</div><div class=perf-label>F1-Score</div><div class=perf-desc>精确率与召回率平衡</div></div>
+<div class="perf-item perf-prec"><div class=perf-value>96.7%</div><div class=perf-label>Precision</div><div class=perf-desc>预测准确率</div></div>
+<div class="perf-item perf-rec"><div class=perf-value>68.0%</div><div class=perf-label>Recall</div><div class=perf-desc>检出率</div></div>
+</div>
+</div>
+<div class=action>
+<div><h3>开始实时监测</h3><p>模拟ICU患者，体验12小时预警功能</p></div>
+<a href=/monitoring class=action-btn>📡 进入监测</a>
+</div>
+<div class=warning>
+<div class=warning-icon>⚠️</div>
+<div><h4>重要说明</h4><p>本系统基于6,000名模拟患者训练，模型AUC=89.4%。标签定义为"未来12小时内是否会发生脓毒症"。实际临床部署需在真实数据上验证。</p></div>
+</div>
+</div>
+<div class=footer><p>Sepsis 12-Hour Early Warning System · BiLSTM-Attention</p></div>
+</body></html>

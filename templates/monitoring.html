@@ -1,0 +1,96 @@
+<!DOCTYPE html><html><head><meta charset=UTF-8><title>脓毒症12小时预警</title>
+<script src=https://cdn.jsdelivr.net/npm/chart.js></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;background:#0f1419;color:#e0e0e0}
+.nav{background:#1a1f2e;padding:15px 40px;display:flex;justify-content:space-between;border-bottom:1px solid #2d3748}
+.nav b{color:#60a5fa}.nav a{color:#9ca3af;text-decoration:none;margin-left:20px}
+.ctrl{background:#1a1f2e;padding:20px 40px;border-bottom:1px solid #2d3748}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+button{padding:12px 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:#fff}
+.b1{background:#10b981}.b1:hover{background:#34d399}
+.b2{background:#ef4444}.b2:hover{background:#f87171}
+.b3{background:#374151}.b3:hover{background:#4b5563}
+button:disabled{opacity:.5;cursor:not-allowed}
+.st{padding:10px;background:#0f1419;border-radius:4px;font-size:12px;color:#6b7280;margin-top:8px}
+.main{padding:25px 40px;display:none}.main.on{display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.c{background:#1a1f2e;border:1px solid #2d3748;border-radius:10px;padding:15px;margin-bottom:12px}
+.c h3{font-size:14px;color:#60a5fa;margin-bottom:12px}
+.rv{font-size:48px;font-weight:800;text-align:center;padding:20px}
+.rl{color:#10b981}.rm{color:#fbbf24}.rh{color:#ef4444}
+.vg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.v{background:#0f1419;padding:12px;border-radius:6px;border-left:3px solid #2d3748}
+.v.w{border-left-color:#fbbf24}.v.d{border-left-color:#ef4444}
+.vn{font-size:11px;color:#6b7280}.vv{font-size:16px;font-weight:600}
+.ch{height:200px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:8px;text-align:left;border-bottom:1px solid #2d3748}th{color:#9ca3af}
+.emp{text-align:center;padding:80px}.emp h2{font-size:20px}.emp p{color:#6b7280}
+.ir{display:flex;align-items:center;margin-bottom:8px;padding:8px;background:#0f1419;border-radius:6px}
+.il{width:70px;font-size:12px;color:#ccc}
+.it{flex:1;height:18px;background:#2d3748;border-radius:9px;overflow:hidden;margin:0 10px}
+.if{height:100%;border-radius:9px}
+.iv{width:45px;text-align:right;font-size:13px;font-weight:700}
+.analysis-text{background:#0f1419;border-radius:8px;padding:15px;line-height:1.8;font-size:13px;color:#d1d5db}
+.analysis-text strong{color:#60a5fa}
+</style></head><body>
+<div class=nav><b>脓毒症12小时早期预警系统</b><div><a href=/>概览</a><a href=/monitoring>监测</a></div></div>
+<div class=ctrl>
+<div class=row><button class=b1 id=bN>正常患者仿真</button><button class=b2 id=bS>脓毒症患者仿真</button></div>
+<div class=row><button class=b3 id=bX disabled>前进一小时</button><button class=b3 id=bR>重置</button></div>
+<div class=st id=st>等待开始...（需要12小时数据才能预警）</div>
+</div>
+<div class=emp id=em><div style=font-size:50px>📊</div><h2>12小时早期预警</h2><p>点击按钮开始模拟</p></div>
+<div class=main id=mn><div class=grid>
+<div>
+<div class=c><h3>📈 风险趋势</h3><div class=ch><canvas id=c1></canvas></div></div>
+<div class=c id=impBox style=display:none><h3>📊 特征重要性</h3><div id=impChart></div></div>
+<div class=c><h3>📋 历史记录</h3><table><thead><tr><th>时间</th><th>心率</th><th>血氧</th><th>体温</th><th>血压</th><th>12h预警</th></tr></thead><tbody id=tb></tbody></table></div>
+</div>
+<div>
+<div class=c><h3>患者信息</h3><div id=pn style=font-size:20px;font-weight:700>-</div><div id=pt style=display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;margin-top:8px>-</div></div>
+<div class=c><h3>🩺 生命体征</h3><div class=vg id=vg></div></div>
+<div class=c><h3>12小时预警</h3><div class=rv id=rk>--</div><div style=text-align:center;color:#6b7280 id=rl>等待数据</div></div>
+<div class=c id=reasonBox style=display:none><h3>🔍 预警分析</h3><div class=analysis-text id=reasonText></div></div>
+</div>
+</div></div>
+<script>
+var pid=null,sep=false,hist=[],c1=null;
+var NM={"HR":"心率","O2Sat":"血氧","Temp":"体温","SBP":"收缩压","MAP":"平均压","DBP":"舒张压","Resp":"呼吸","BaseExcess":"碱剩余","HCO3":"碳酸氢根","FiO2":"吸氧浓度","pH":"pH值","PaCO2":"二氧化碳"};
+
+document.getElementById("bN").onclick=function(){go("normal")};
+document.getElementById("bS").onclick=function(){go("sepsis")};
+document.getElementById("bX").onclick=function(){nx()};
+document.getElementById("bR").onclick=function(){rs()};
+
+function go(s){ss("初始化...");fetch("/api/start/"+s).then(function(r){return r.json()}).then(function(r){if(r.ok){pid=r.data.pid;sep=s==="sepsis";hist=[r.data];document.getElementById("em").style.display="none";document.getElementById("mn").classList.add("on");document.getElementById("bX").disabled=false;document.getElementById("pn").textContent=pid;var p=document.getElementById("pt");p.textContent=sep?"脓毒症":"正常";p.style.background=sep?"rgba(239,68,68,.2)":"rgba(16,185,129,.2)";p.style.color=sep?"#ef4444":"#10b981";ic();up(r.data);ss("开始")}}).catch(function(){ss("失败")})}
+function nx(){if(!pid)return;document.getElementById("bX").disabled=true;ss("生成...");fetch("/api/next/"+pid).then(function(r){return r.json()}).then(function(r){if(r.ok){hist.push(r.data);up(r.data);document.getElementById("bX").disabled=false;ss("H"+(r.data.hour+1)+"完成")}}).catch(function(){document.getElementById("bX").disabled=false})}
+function rs(){pid=null;hist=[];document.getElementById("em").style.display="block";document.getElementById("mn").classList.remove("on");document.getElementById("bX").disabled=true;document.getElementById("impBox").style.display="none";document.getElementById("reasonBox").style.display="none";ss("等待")}
+
+function up(d){
+var r=document.getElementById("rk"),l=document.getElementById("rl");
+if(d.risk!==null){r.textContent=(d.risk*100).toFixed(1)+"%";r.className="rv "+(d.risk>.7?"rh":d.risk>.4?"rm":"rl");l.textContent=d.level}else{r.textContent="采集中";l.textContent="需要12小时数据"}
+
+var g=document.getElementById("vg");g.innerHTML="";
+[{k:"HR",n:"心率",u:"bpm",l:60,h:100},{k:"O2Sat",n:"血氧",u:"%",l:95,h:100},{k:"Temp",n:"体温",u:"°C",l:36.5,h:37.5},{k:"SBP",n:"收缩压",u:"mmHg",l:90,h:140},{k:"MAP",n:"平均压",u:"mmHg",l:70,h:110},{k:"Resp",n:"呼吸",u:"次/分",l:12,h:20}].forEach(function(c){var v=d.vitals[c.k],cl="v";if(v<c.l*.9||v>c.h*1.1)cl="v d";else if(v<c.l||v>c.h)cl="v w";var div=document.createElement("div");div.className=cl;div.innerHTML="<div class=vn>"+c.n+"</div><div class=vv>"+v.toFixed(1)+" "+c.u+"</div>";g.appendChild(div)});
+
+if(c1){var lb=hist.map(function(h){return"H"+h.hour});c1.data.labels=lb;c1.data.datasets[0].data=hist.map(function(h){return h.risk||0});c1.update()}
+
+var tb=document.getElementById("tb");tb.innerHTML="";
+hist.forEach(function(h){var tr=document.createElement("tr");var rv=h.risk?(h.risk*100).toFixed(0)+"%":"--";tr.innerHTML="<td>H"+h.hour+"</td><td>"+h.vitals.HR.toFixed(0)+"</td><td>"+h.vitals.O2Sat.toFixed(0)+"</td><td>"+h.vitals.Temp.toFixed(1)+"</td><td>"+h.vitals.SBP.toFixed(0)+"</td><td>"+rv+"</td>";tb.appendChild(tr)});
+
+if(d.importance)showAna(d);
+if(d.reason_text){document.getElementById("reasonBox").style.display="block";document.getElementById("reasonText").innerHTML=d.reason_text}
+}
+
+function showAna(d){
+document.getElementById("impBox").style.display="block";
+var imp=d.importance,c=document.getElementById("impChart");c.innerHTML="";
+var sorted=Object.keys(imp).sort(function(a,b){return imp[b]-imp[a]});
+sorted.slice(0,6).forEach(function(f){var val=imp[f],color="#60a5fa";if(val>0.7)color="#ef4444";else if(val>0.4)color="#fbbf24";var row=document.createElement("div");row.className="ir";row.innerHTML="<div class=il>"+(NM[f]||f)+"</div><div class=it><div class=if style=width:"+val*100+"%;background:"+color+"></div></div><div class=iv style=color:"+color+">"+(val*100).toFixed(0)+"%</div>";c.appendChild(row)});
+}
+
+function ic(){if(c1)c1.destroy();c1=new Chart(document.getElementById("c1"),{type:"line",data:{labels:[],datasets:[{data:[],borderColor:"#60a5fa",backgroundColor:"rgba(96,165,250,.1)",fill:true,tension:.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:1,ticks:{callback:function(v){return(v*100)+"%"}}}}}})}
+function ss(t){document.getElementById("st").textContent="状态: "+t}
+console.log("加载完成");
+</script></body></html>
