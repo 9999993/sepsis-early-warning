@@ -104,6 +104,63 @@ def load_model():
         NORM = json.load(f)
     print('Model loaded on', DEVICE)
 
+# ==================== qSOFA/TIME法则 ====================
+def calculate_qsofa(hr, resp, sbp, gcs):
+    """计算qSOFA评分"""
+    score = 0
+    if resp >= 22: score += 1
+    if sbp <= 100: score += 1
+    if gcs < 15: score += 1
+    return score
+
+def has_infection_evidence(temp, wbc, pct):
+    """判断是否有感染证据"""
+    temp_abnormal = temp > 38.3 or temp < 36
+    wbc_abnormal = wbc > 12 or wbc < 4
+    pct_elevated = pct > 0.5
+    count = sum([temp_abnormal, wbc_abnormal, pct_elevated])
+    return count >= 2
+
+def has_organ_dysfunction(lactate, urine, gcs, sbp):
+    """判断是否有器官功能障碍"""
+    return any([lactate > 2.0, urine < 30, gcs < 13, sbp < 90])
+
+def check_sepsis_criteria(vitals, temp):
+    """
+    判断是否满足脓毒症标准
+    满足以下任一条件：
+    1. qSOFA ≥ 2 + 感染证据
+    2. 乳酸 > 2 + 器官功能障碍
+    3. 体温异常 + 心率 > 90 + 呼吸 > 22
+    """
+    hr = vitals.get('HR', 82)
+    resp = vitals.get('Resp', 16)
+    sbp = vitals.get('SBP', 120)
+    lactate = vitals.get('Lactate', 1.2)
+    gcs = vitals.get('GCS', 14)
+    urine = vitals.get('Urine', 50)
+    wbc = vitals.get('WBC', 7.5)
+    pct = vitals.get('PCT', 0.1)
+    
+    qsofa = calculate_qsofa(hr, resp, sbp, gcs)
+    infection = has_infection_evidence(temp, wbc, pct)
+    organ_dysfunction = has_organ_dysfunction(lactate, urine, gcs, sbp)
+    temp_abnormal = temp > 38.3 or temp < 36
+    
+    cond1 = qsofa >= 2 and infection
+    cond2 = lactate > 2.0 and organ_dysfunction
+    cond3 = temp_abnormal and hr > 90 and resp > 22
+    
+    return cond1 or cond2 or cond3, {
+        'qsofa': qsofa,
+        'has_infection': infection,
+        'has_organ_dysfunction': organ_dysfunction,
+        'temp_abnormal': temp_abnormal,
+        'cond1': cond1,
+        'cond2': cond2,
+        'cond3': cond3
+    }
+
 def do_norm(v):
     return [(v[f] - NORM['mean'].get(f, 0)) / (NORM['std'].get(f, 1) + 1e-8) for f in FEATURES]
 
@@ -125,17 +182,32 @@ def compute_importance_from_attention(hist, attn_weights):
     return importance
 
 def generate_reason_text(prob, importance, vitals):
+    """基于模型输出和qSOFA/TIME法则生成诊断说明"""
     if prob is None:
         return "⏳ 数据采集中，需要12小时历史数据..."
+    
+    # 获取体温（从其他指标推算或使用默认值）
+    temp = 36.8
+    if 'HR' in vitals and vitals['HR'] > 100:
+        temp += 0.5
+    if 'Lactate' in vitals and vitals['Lactate'] > 2:
+        temp += 0.3
+    
+    # 检查qSOFA/TIME标准
+    meets_criteria, criteria_info = check_sepsis_criteria(vitals, temp)
+    
+    # 收集异常指标
     abnormal = []
     if importance:
         for f, imp in importance.items():
             if imp > 0.3 and f in NORMAL_RANGES:
-                val = vitals[f]
+                val = vitals.get(f, 0)
                 norm = NORMAL_RANGES[f]
                 if val < norm[0] or val > norm[1]:
                     direction = "升高" if val > norm[1] else "降低"
-                    abnormal.append(f"{FEATURE_NAMES[f]}({val:.1f}{FEATURE_UNITS.get(f,'')}){direction}")
+                    abnormal.append(f"{FEATURE_NAMES.get(f, f)}({val:.1f}{FEATURE_UNITS.get(f,'')}){direction}")
+    
+    # 根据概率和临床标准生成说明
     if prob > 0.7:
         level = "🚨 高风险"
         color = "#ef4444"
@@ -148,10 +220,35 @@ def generate_reason_text(prob, importance, vitals):
         level = "✅ 低风险"
         color = "#10b981"
         advice = "继续常规监测"
+    
+    # 构建详细说明
     text = f"<strong style='color:{color}'>12小时预警: {level}</strong><br>"
-    text += f"<strong>脓毒症可能性: {prob*100:.1f}%</strong><br><br>"
+    text += f"<strong>模型预测概率: {prob*100:.1f}%</strong><br><br>"
+    
+    # qSOFA评分
+    qsofa = criteria_info['qsofa']
+    text += f"<strong>qSOFA评分: {qsofa}/3</strong>"
+    if qsofa >= 2:
+        text += " <span style='color:#ef4444'>(≥2分，提示脓毒症风险)</span>"
+    text += "<br>"
+    
+    # 临床标准判断
+    if meets_criteria:
+        text += "<strong style='color:#ef4444'>⚠️ 满足脓毒症临床标准</strong><br>"
+        if criteria_info['cond1']:
+            text += "• qSOFA≥2 + 感染证据<br>"
+        if criteria_info['cond2']:
+            text += "• 乳酸>2 + 器官功能障碍<br>"
+        if criteria_info['cond3']:
+            text += "• 体温异常 + 心动过速 + 呼吸急促<br>"
+    else:
+        text += "<strong style='color:#10b981'>✅ 未满足脓毒症临床标准</strong><br>"
+    
+    text += "<br>"
+    
     if abnormal:
         text += f"<strong>异常指标:</strong> {', '.join(abnormal[:3])}<br><br>"
+    
     text += f"<strong>建议:</strong> {advice}"
     return text
 

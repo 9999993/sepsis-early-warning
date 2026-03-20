@@ -181,24 +181,24 @@ def is_sepsis(vitals, temp=37.0):
     return condition1 or condition2 or condition3
 
 # ==================== 数据生成 ====================
-print("\n[1/5] 生成6000名患者数据（15%脓毒症率）...")
+print("\n[1/5] 生成6000名患者数据（基于qSOFA/TIME法则）...")
 
 def generate_patient(pid, will_sepsis):
     """生成单个患者的时序数据"""
     n_hours = np.random.randint(MIN_HOURS, MAX_HOURS + 1)
     patient_offset = {f: np.random.normal(0, VARIABILITY[f]*0.3) for f in FEATURES}
     
-    # 脓毒症发作时间（第8-20小时）
+    # 脓毒症恶化起始时间（第8-20小时）
     onset = np.random.randint(8, 20) if will_sepsis else None
-    recovery = onset + np.random.randint(15, 25) if will_sepsis else None
     
     records = []
     temp_base = 36.8  # 体温基线
+    consecutive_sepsis = 0  # 连续满足脓毒症条件的小时数
     
     for h in range(n_hours):
         record = {'patient_id': pid, 'hour': h}
         
-        # 生成体温（用于感染判断）
+        # 生成体温
         temp = temp_base + np.random.normal(0, 0.3)
         if will_sepsis and onset is not None and h > onset:
             hours_sick = h - onset
@@ -219,42 +219,18 @@ def generate_patient(pid, will_sepsis):
                 prog = min(1.0, hours_sick / 12)
                 fluc = np.random.normal(1.0, 0.15)
                 
-                # 心率升高
-                if f == 'HR':
-                    val = base + 30 * prog * fluc + noise
-                # 呼吸加快
-                elif f == 'Resp':
-                    val = base + 10 * prog * fluc + noise
-                # 收缩压下降
-                elif f == 'SBP':
-                    val = base - 30 * prog * fluc + noise
-                # 乳酸升高（关键指标）
-                elif f == 'Lactate':
-                    val = base + 4.0 * prog * fluc + noise
-                # PCT升高
-                elif f == 'PCT':
-                    val = base + 5.0 * prog * fluc + noise
-                # 淋巴细胞下降
-                elif f == 'LYM':
-                    val = base - 0.8 * prog * fluc + noise
-                # 白细胞升高
-                elif f == 'WBC':
-                    val = base + 8.0 * prog * fluc + noise
-                # 尿量减少
-                elif f == 'Urine':
-                    val = base - 30 * prog * fluc + noise
-                # 碳酸氢盐下降（酸中毒）
-                elif f == 'HCO3':
-                    val = base - 5 * prog * fluc + noise
-                # GCS下降（意识改变）
-                elif f == 'GCS':
-                    val = base - 3 * prog * fluc + noise
-                # APTT延长
-                elif f == 'APTT':
-                    val = base + 15 * prog * fluc + noise
-                # 血氧下降
-                elif f == 'O2Sat':
-                    val = base - 6 * prog * fluc + noise
+                if f == 'HR': val = base + 30 * prog * fluc + noise
+                elif f == 'Resp': val = base + 10 * prog * fluc + noise
+                elif f == 'SBP': val = base - 30 * prog * fluc + noise
+                elif f == 'Lactate': val = base + 4.0 * prog * fluc + noise
+                elif f == 'PCT': val = base + 5.0 * prog * fluc + noise
+                elif f == 'LYM': val = base - 0.8 * prog * fluc + noise
+                elif f == 'WBC': val = base + 8.0 * prog * fluc + noise
+                elif f == 'Urine': val = base - 30 * prog * fluc + noise
+                elif f == 'HCO3': val = base - 5 * prog * fluc + noise
+                elif f == 'GCS': val = base - 3 * prog * fluc + noise
+                elif f == 'APTT': val = base + 15 * prog * fluc + noise
+                elif f == 'O2Sat': val = base - 6 * prog * fluc + noise
             
             # 限制范围
             val = max(LIMITS[f][0], min(LIMITS[f][1], val))
@@ -267,15 +243,17 @@ def generate_patient(pid, will_sepsis):
             else:
                 record[f] = round(val, 1)
         
-        # 12小时预警标签
-        if will_sepsis and onset is not None:
-            # 从onset前12小时到康复都标记为1
-            if h >= onset - 12 and h <= recovery:
-                record['label'] = 1
-            else:
-                record['label'] = 0
+        # ===== 基于qSOFA/TIME法则的标签生成 =====
+        # 使用is_sepsis()函数动态判断
+        is_septic_now = is_sepsis(record, record['Temp'])
+        
+        if is_septic_now:
+            consecutive_sepsis += 1
         else:
-            record['label'] = 0
+            consecutive_sepsis = 0
+        
+        # 连续2小时满足条件才标记为阳性（避免单点波动）
+        record['label'] = 1 if consecutive_sepsis >= 2 else 0
         
         records.append(record)
     
