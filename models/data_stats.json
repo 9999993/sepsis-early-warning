@@ -1,7 +1,109 @@
 {
-  "total_patients": 5000,
-  "sepsis_patients": 721,
-  "train_patients": 3500,
-  "val_patients": 750,
-  "test_patients": 750
+  "total_patients": 6000,
+  "sepsis_patients": 903,
+  "sepsis_rate": 0.15,
+  "total_records": 252222,
+  "positive_samples": 27149,
+  "positive_rate": 0.10763930188484748,
+  "features": [
+    "HR",
+    "Resp",
+    "SBP",
+    "Lactate",
+    "PCT",
+    "LYM",
+    "WBC",
+    "Urine",
+    "HCO3",
+    "GCS",
+    "APTT",
+    "O2Sat"
+  ],
+  "feature_names": {
+    "HR": "心率",
+    "Resp": "呼吸频率",
+    "SBP": "收缩压",
+    "Lactate": "乳酸",
+    "PCT": "降钙素原",
+    "LYM": "淋巴细胞",
+    "WBC": "白细胞",
+    "Urine": "尿量",
+    "HCO3": "碳酸氢盐",
+    "GCS": "GCS评分",
+    "APTT": "APTT",
+    "O2Sat": "血氧饱和度"
+  },
+  "feature_units": {
+    "HR": "bpm",
+    "Resp": "次/分",
+    "SBP": "mmHg",
+    "Lactate": "mmol/L",
+    "PCT": "ng/mL",
+    "LYM": "×10^9/L",
+    "WBC": "×10^9/L",
+    "Urine": "mL/h",
+    "HCO3": "mmol/L",
+    "GCS": "分",
+    "APTT": "秒",
+    "O2Sat": "%"
+  },
+  "normal_ranges": {
+    "HR": [
+      60,
+      100
+    ],
+    "Resp": [
+      12,
+      20
+    ],
+    "SBP": [
+      90,
+      140
+    ],
+    "Lactate": [
+      0.5,
+      2.0
+    ],
+    "PCT": [
+      0,
+      0.5
+    ],
+    "LYM": [
+      1.0,
+      3.0
+    ],
+    "WBC": [
+      4.0,
+      10.0
+    ],
+    "Urine": [
+      30,
+      100
+    ],
+    "HCO3": [
+      22,
+      26
+    ],
+    "GCS": [
+      13,
+      15
+    ],
+    "APTT": [
+      25,
+      35
+    ],
+    "O2Sat": [
+      95,
+      100
+    ]
+  },
+  "train_patients": 4200,
+  "val_patients": 900,
+  "test_patients": 900,
+  "train_records": 176319,
+  "val_records": 37660,
+  "test_records": 38243,
+  "train_positive_rate": 0.10647179260317946,
+  "val_positive_rate": 0.10961232076473712,
+  "test_positive_rate": 0.11107915174018775
 }

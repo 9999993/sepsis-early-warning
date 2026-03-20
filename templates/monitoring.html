@@ -45,18 +45,21 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid #2d3748}th{color:#9ca3
 <div>
 <div class=c><h3>📈 风险趋势</h3><div class=ch><canvas id=c1></canvas></div></div>
 <div class=c id=impBox style=display:none><h3>📊 特征重要性</h3><div id=impChart></div></div>
-<div class=c><h3>📋 历史记录</h3><table><thead><tr><th>时间</th><th>心率</th><th>血氧</th><th>体温</th><th>血压</th><th>12h预警</th></tr></thead><tbody id=tb></tbody></table></div>
+<div class=c><h3>📋 历史记录</h3>
+<table><thead><tr><th>时间</th><th>心率</th><th>呼吸</th><th>乳酸</th><th>收缩压</th><th>12h预警</th></tr></thead><tbody id=tb></tbody></table>
+</div>
 </div>
 <div>
 <div class=c><h3>患者信息</h3><div id=pn style=font-size:20px;font-weight:700>-</div><div id=pt style=display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;margin-top:8px>-</div></div>
-<div class=c><h3>🩺 生命体征</h3><div class=vg id=vg></div></div>
+<div class=c><h3>🩺 临床指标</h3><div class=vg id=vg></div></div>
 <div class=c><h3>12小时预警</h3><div class=rv id=rk>--</div><div style=text-align:center;color:#6b7280 id=rl>等待数据</div></div>
 <div class=c id=reasonBox style=display:none><h3>🔍 预警分析</h3><div class=analysis-text id=reasonText></div></div>
 </div>
 </div></div>
 <script>
 var pid=null,sep=false,hist=[],c1=null;
-var NM={"HR":"心率","O2Sat":"血氧","Temp":"体温","SBP":"收缩压","MAP":"平均压","DBP":"舒张压","Resp":"呼吸","BaseExcess":"碱剩余","HCO3":"碳酸氢根","FiO2":"吸氧浓度","pH":"pH值","PaCO2":"二氧化碳"};
+var NM={"HR":"心率","Resp":"呼吸","SBP":"收缩压","Lactate":"乳酸","PCT":"降钙素原","LYM":"淋巴细胞","WBC":"白细胞","Urine":"尿量","HCO3":"碳酸氢盐","GCS":"GCS评分","APTT":"APTT","O2Sat":"血氧饱和度"};
+var UNITS={"HR":"bpm","Resp":"次/分","SBP":"mmHg","Lactate":"mmol/L","PCT":"ng/mL","LYM":"×10⁹/L","WBC":"×10⁹/L","Urine":"mL/h","HCO3":"mmol/L","GCS":"分","APTT":"秒","O2Sat":"%"};
 
 document.getElementById("bN").onclick=function(){go("normal")};
 document.getElementById("bS").onclick=function(){go("sepsis")};
@@ -72,12 +75,12 @@ var r=document.getElementById("rk"),l=document.getElementById("rl");
 if(d.risk!==null){r.textContent=(d.risk*100).toFixed(1)+"%";r.className="rv "+(d.risk>.7?"rh":d.risk>.4?"rm":"rl");l.textContent=d.level}else{r.textContent="采集中";l.textContent="需要12小时数据"}
 
 var g=document.getElementById("vg");g.innerHTML="";
-[{k:"HR",n:"心率",u:"bpm",l:60,h:100},{k:"O2Sat",n:"血氧",u:"%",l:95,h:100},{k:"Temp",n:"体温",u:"°C",l:36.5,h:37.5},{k:"SBP",n:"收缩压",u:"mmHg",l:90,h:140},{k:"MAP",n:"平均压",u:"mmHg",l:70,h:110},{k:"Resp",n:"呼吸",u:"次/分",l:12,h:20}].forEach(function(c){var v=d.vitals[c.k],cl="v";if(v<c.l*.9||v>c.h*1.1)cl="v d";else if(v<c.l||v>c.h)cl="v w";var div=document.createElement("div");div.className=cl;div.innerHTML="<div class=vn>"+c.n+"</div><div class=vv>"+v.toFixed(1)+" "+c.u+"</div>";g.appendChild(div)});
+[{k:"HR",n:"心率",u:"bpm",l:60,h:100},{k:"Resp",n:"呼吸",u:"次/分",l:12,h:20},{k:"SBP",n:"收缩压",u:"mmHg",l:90,h:140},{k:"Lactate",n:"乳酸",u:"mmol/L",l:0.5,h:2.0},{k:"PCT",n:"降钙素原",u:"ng/mL",l:0,h:0.5},{k:"O2Sat",n:"血氧",u:"%",l:95,h:100}].forEach(function(c){var v=d.vitals[c.k],cl="v";if(v<c.l*.9||v>c.h*1.1)cl="v d";else if(v<c.l||v>c.h)cl="v w";var div=document.createElement("div");div.className=cl;div.innerHTML="<div class=vn>"+c.n+"</div><div class=vv>"+v.toFixed(1)+" "+c.u+"</div>";g.appendChild(div)});
 
 if(c1){var lb=hist.map(function(h){return"H"+h.hour});c1.data.labels=lb;c1.data.datasets[0].data=hist.map(function(h){return h.risk||0});c1.update()}
 
 var tb=document.getElementById("tb");tb.innerHTML="";
-hist.forEach(function(h){var tr=document.createElement("tr");var rv=h.risk?(h.risk*100).toFixed(0)+"%":"--";tr.innerHTML="<td>H"+h.hour+"</td><td>"+h.vitals.HR.toFixed(0)+"</td><td>"+h.vitals.O2Sat.toFixed(0)+"</td><td>"+h.vitals.Temp.toFixed(1)+"</td><td>"+h.vitals.SBP.toFixed(0)+"</td><td>"+rv+"</td>";tb.appendChild(tr)});
+hist.forEach(function(h){var tr=document.createElement("tr");var rv=h.risk?(h.risk*100).toFixed(0)+"%":"--";tr.innerHTML="<td>H"+h.hour+"</td><td>"+h.vitals.HR.toFixed(0)+"</td><td>"+h.vitals.Resp.toFixed(0)+"</td><td>"+h.vitals.Lactate.toFixed(1)+"</td><td>"+h.vitals.SBP.toFixed(0)+"</td><td>"+rv+"</td>";tb.appendChild(tr)});
 
 if(d.importance)showAna(d);
 if(d.reason_text){document.getElementById("reasonBox").style.display="block";document.getElementById("reasonText").innerHTML=d.reason_text}

@@ -38,6 +38,11 @@
 .perf-value{font-size:36px;font-weight:800;margin-bottom:8px}
 .perf-auc .perf-value{color:#60a5fa}.perf-f1 .perf-value{color:#34d399}.perf-prec .perf-value{color:#f472b6}.perf-rec .perf-value{color:#fbbf24}
 .perf-label{font-size:14px;color:#9ca3af}.perf-desc{font-size:12px;color:#6b7280;margin-top:4px}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:50px}
+.feature{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px}
+.feature-name{font-size:14px;font-weight:600;color:#60a5fa;margin-bottom:8px}
+.feature-range{font-size:12px;color:#9ca3af}
+.feature-desc{font-size:13px;color:#d1d5db;margin-top:8px}
 .action{background:linear-gradient(135deg,rgba(96,165,250,.1),rgba(52,211,153,.05));border:1px solid rgba(96,165,250,.3);border-radius:20px;padding:50px;display:flex;justify-content:space-between;align-items:center;margin-bottom:50px}
 .action h3{font-size:28px;margin-bottom:10px}.action p{color:#9ca3af;font-size:16px}
 .action-btn{display:inline-flex;align-items:center;gap:12px;padding:20px 40px;font-size:18px;font-weight:700;background:linear-gradient(135deg,#60a5fa,#3b82f6);color:#fff;text-decoration:none;border-radius:12px;transition:all .3s}
@@ -45,6 +50,7 @@
 .warning{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:16px;padding:30px;display:flex;gap:15px}
 .warning-icon{font-size:28px}.warning h4{color:#fbbf24;margin-bottom:10px;font-size:18px}.warning p{color:#d1d5db;line-height:1.8;font-size:14px}
 .footer{text-align:center;padding:50px;color:#4b5563;border-top:1px solid #2d3748}
+img{max-width:100%;border-radius:10px;margin-top:20px}
 </style></head><body>
 <div class=nav>
 <div class=logo>🏥 脓毒症12小时预警系统</div>
@@ -52,11 +58,11 @@
 </div>
 <div class=hero>
 <h1>脓毒症12小时早期预警系统</h1>
-<p>Sepsis 12-Hour Early Warning System · BiLSTM + Attention深度学习</p>
+<p>基于临床指标的深度学习预警 · qSOFA + TIME法则 · 为黄金1小时争取时间</p>
 </div>
 <div class=metrics>
 <div class=metric><div class=metric-value metric-blue>6,000</div><div class=metric-label>训练患者数</div><div class=metric-sub>15%脓毒症发生率</div></div>
-<div class=metric><div class=metric-value metric-green>89.4%</div><div class=metric-label>测试集AUC</div><div class=metric-sub>12小时预警性能</div></div>
+<div class=metric><div class=metric-value metric-green>90.3%</div><div class=metric-label>测试集AUC</div><div class=metric-sub>基于临床指标</div></div>
 <div class=metric><div class=metric-value metric-yellow>12h</div><div class=metric-label>提前预警时间</div><div class=metric-sub>为干预争取时间</div></div>
 </div>
 <div class=content>
@@ -65,36 +71,51 @@
 <div class=card>
 <div class=card-header><div class=card-title>训练数据</div><span class="badge badge-blue">TRAIN</span></div>
 <div class=card-row><span class=card-label>患者数</span><span class=card-value>4,200</span></div>
-<div class=card-row><span class=card-label>记录数</span><span class=card-value>176,073</span></div>
-<div class=card-row><span class=card-label>阳性率</span><span class=card-value>10.8%</span></div>
+<div class=card-row><span class=card-label>记录数</span><span class=card-value>176,319</span></div>
+<div class=card-row><span class=card-label>阳性率</span><span class=card-value>10.6%</span></div>
 </div>
 <div class=card>
 <div class=card-header><div class=card-title>验证数据</div><span class="badge badge-green">VAL</span></div>
 <div class=card-row><span class=card-label>患者数</span><span class=card-value>900</span></div>
-<div class=card-row><span class=card-label>记录数</span><span class=card-value>37,933</span></div>
-<div class=card-row><span class=card-label>阳性率</span><span class=card-value>12.3%</span></div>
+<div class=card-row><span class=card-label>记录数</span><span class=card-value>37,660</span></div>
+<div class=card-row><span class=card-label>阳性率</span><span class=card-value>11.0%</span></div>
 </div>
 <div class=card>
 <div class=card-header><div class=card-title>测试数据</div><span class="badge badge-yellow">TEST</span></div>
 <div class=card-row><span class=card-label>患者数</span><span class=card-value>900</span></div>
-<div class=card-row><span class=card-label>记录数</span><span class=card-value>37,798</span></div>
-<div class=card-row><span class=card-label>阳性率</span><span class=card-value>10.1%</span></div>
+<div class=card-row><span class=card-label>记录数</span><span class=card-value>38,243</span></div>
+<div class=card-row><span class=card-label>阳性率</span><span class=card-value>11.1%</span></div>
 </div>
 <div class=card>
 <div class=card-header><div class=card-title>汇总</div><span class="badge badge-purple">TOTAL</span></div>
 <div class=card-row><span class=card-label>总患者</span><span class=card-value>6,000</span></div>
-<div class=card-row><span class=card-label>脓毒症患者</span><span class=card-value>916 (15.3%)</span></div>
+<div class=card-row><span class=card-label>脓毒症患者</span><span class=card-value>903 (15%)</span></div>
 <div class=card-row><span class=card-label>序列长度</span><span class=card-value>12小时</span></div>
 </div>
 </div>
 <div class=perf>
 <div class=perf-header><div class=perf-title>🎯 模型测试集性能</div><div class=perf-sub>基于900名独立测试患者的评估结果</div></div>
 <div class=perf-grid>
-<div class="perf-item perf-auc"><div class=perf-value>89.4%</div><div class=perf-label>AUC-ROC</div><div class=perf-desc>综合判别能力</div></div>
-<div class="perf-item perf-f1"><div class=perf-value>79.8%</div><div class=perf-label>F1-Score</div><div class=perf-desc>精确率与召回率平衡</div></div>
-<div class="perf-item perf-prec"><div class=perf-value>96.7%</div><div class=perf-label>Precision</div><div class=perf-desc>预测准确率</div></div>
-<div class="perf-item perf-rec"><div class=perf-value>68.0%</div><div class=perf-label>Recall</div><div class=perf-desc>检出率</div></div>
+<div class="perf-item perf-auc"><div class=perf-value>90.3%</div><div class=perf-label>AUC-ROC</div><div class=perf-desc>综合判别能力</div></div>
+<div class="perf-item perf-f1"><div class=perf-value>81.3%</div><div class=perf-label>F1-Score</div><div class=perf-desc>精确率与召回率平衡</div></div>
+<div class="perf-item perf-prec"><div class=perf-value>97.8%</div><div class=perf-label>Precision</div><div class=perf-desc>预测准确率</div></div>
+<div class="perf-item perf-rec"><div class=perf-value>69.5%</div><div class=perf-label>Recall</div><div class=perf-desc>检出率</div></div>
 </div>
+</div>
+<div class=section-title>💊 临床指标（12个）</div>
+<div class=features>
+<div class=feature><div class=feature-name>心率 (HR)</div><div class=feature-range>正常: 60-100 bpm</div><div class=feature-desc>感染导致代偿性心动过速</div></div>
+<div class=feature><div class=feature-name>呼吸频率 (Resp)</div><div class=feature-range>正常: 12-20 次/分</div><div class=feature-desc>qSOFA评分指标之一</div></div>
+<div class=feature><div class=feature-name>收缩压 (SBP)</div><div class=feature-range>正常: 90-140 mmHg</div><div class=feature-desc>qSOFA评分指标之一</div></div>
+<div class=feature><div class=feature-name>乳酸 (Lactate)</div><div class=feature-range>正常: 0.5-2.0 mmol/L</div><div class=feature-desc>组织灌注不足标志</div></div>
+<div class=feature><div class=feature-name>降钙素原 (PCT)</div><div class=feature-range>正常: 0-0.5 ng/mL</div><div class=feature-desc>细菌感染标志物</div></div>
+<div class=feature><div class=feature-name>淋巴细胞 (LYM)</div><div class=feature-range>正常: 1.0-3.0 ×10⁹/L</div><div class=feature-desc>免疫功能指标</div></div>
+<div class=feature><div class=feature-name>白细胞 (WBC)</div><div class=feature-range>正常: 4.0-10.0 ×10⁹/L</div><div class=feature-desc>感染经典指标</div></div>
+<div class=feature><div class=feature-name>尿量 (Urine)</div><div class=feature-range>正常: 30-100 mL/h</div><div class=feature-desc>肾功能指标</div></div>
+<div class=feature><div class=feature-name>碳酸氢盐 (HCO3)</div><div class=feature-range>正常: 22-26 mmol/L</div><div class=feature-desc>酸碱平衡指标</div></div>
+<div class=feature><div class=feature-name>GCS评分</div><div class=feature-range>正常: 13-15 分</div><div class=feature-desc>qSOFA评分指标之一</div></div>
+<div class=feature><div class=feature-name>APTT</div><div class=feature-range>正常: 25-35 秒</div><div class=feature-desc>凝血功能指标</div></div>
+<div class=feature><div class=feature-name>血氧饱和度 (O2Sat)</div><div class=feature-range>正常: 95-100%</div><div class=feature-desc>氧合状态指标</div></div>
 </div>
 <div class=action>
 <div><h3>开始实时监测</h3><p>模拟ICU患者，体验12小时预警功能</p></div>
@@ -102,7 +123,7 @@
 </div>
 <div class=warning>
 <div class=warning-icon>⚠️</div>
-<div><h4>重要说明</h4><p>本系统基于6,000名模拟患者训练，模型AUC=89.4%。标签定义为"未来12小时内是否会发生脓毒症"。实际临床部署需在真实数据上验证。</p></div>
+<div><h4>重要说明</h4><p>本系统基于6,000名模拟患者训练，采用qSOFA评分和TIME识别法则定义脓毒症。模型AUC=90.3%，F1=81.3%。实际临床部署需在真实数据上验证。</p></div>
 </div>
 </div>
 <div class=footer><p>Sepsis 12-Hour Early Warning System · BiLSTM-Attention</p></div>
