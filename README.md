@@ -224,7 +224,7 @@ python3 app.py
 
 ### 首页 - 系统概览
 
-![Homepage](docs/homepage.png)
+![Homepage](docs/homepage.jpeg)
 
 展示：
 - 6,000名训练患者
@@ -234,7 +234,7 @@ python3 app.py
 
 ### 监测页面 - 正常患者
 
-![Monitoring](docs/monitoring.png)
+![Monitoring](docs/monitoring.jpeg)
 
 实时监测界面，展示：
 - 风险趋势图
@@ -245,7 +245,7 @@ python3 app.py
 
 ### 监测页面 - 脓毒症预警
 
-![Monitoring Warning](docs/monitoring_warning.png)
+![Monitoring Warning](docs/monitoring_warning.jpeg)
 
 脓毒症患者预警状态，展示：
 - 风险概率升高
