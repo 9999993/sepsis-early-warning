@@ -210,27 +210,48 @@ def generate_patient(pid, will_sepsis):
         # 生成其他指标
         for f in FEATURES:
             base = BASELINE[f] + patient_offset.get(f, 0)
-            noise = np.random.normal(0, VARIABILITY[f] * 0.15)
+            # 增加正常波动（模拟真实ICU的不确定性）
+            noise = np.random.normal(0, VARIABILITY[f] * 0.25)
+            
+            # 添加随机异常值（10%概率出现异常波动）
+            if np.random.random() < 0.1:
+                noise += np.random.normal(0, VARIABILITY[f] * 0.5)
+            
             val = base + noise
             
-            # 脓毒症恶化
+            # 脓毒症恶化 - 适中的恶化幅度
             if will_sepsis and onset is not None and h > onset:
                 hours_sick = h - onset
-                prog = min(1.0, hours_sick / 12)
-                fluc = np.random.normal(1.0, 0.15)
+                # 适中的恶化曲线
+                prog = min(1.0, hours_sick / 18)  # 从20改为18
+                # 适中的随机波动
+                fluc = np.random.normal(1.0, 0.4)  # 从0.5改为0.4
                 
-                if f == 'HR': val = base + 30 * prog * fluc + noise
-                elif f == 'Resp': val = base + 10 * prog * fluc + noise
-                elif f == 'SBP': val = base - 30 * prog * fluc + noise
-                elif f == 'Lactate': val = base + 4.0 * prog * fluc + noise
-                elif f == 'PCT': val = base + 5.0 * prog * fluc + noise
-                elif f == 'LYM': val = base - 0.8 * prog * fluc + noise
-                elif f == 'WBC': val = base + 8.0 * prog * fluc + noise
-                elif f == 'Urine': val = base - 30 * prog * fluc + noise
-                elif f == 'HCO3': val = base - 5 * prog * fluc + noise
-                elif f == 'GCS': val = base - 3 * prog * fluc + noise
-                elif f == 'APTT': val = base + 15 * prog * fluc + noise
-                elif f == 'O2Sat': val = base - 6 * prog * fluc + noise
+                # 适中的变化幅度
+                if f == 'HR': 
+                    val = base + 12 * prog * fluc + noise  # 从8改为12
+                elif f == 'Resp': 
+                    val = base + 4 * prog * fluc + noise  # 从3改为4
+                elif f == 'SBP': 
+                    val = base - 12 * prog * fluc + noise  # 从8改为12
+                elif f == 'Lactate': 
+                    val = base + 1.2 * prog * fluc + noise  # 从0.8改为1.2
+                elif f == 'PCT': 
+                    val = base + 1.5 * prog * fluc + noise  # 从1.0改为1.5
+                elif f == 'LYM': 
+                    val = base - 0.3 * prog * fluc + noise  # 从0.2改为0.3
+                elif f == 'WBC': 
+                    val = base + 3.0 * prog * fluc + noise  # 从2.0改为3.0
+                elif f == 'Urine': 
+                    val = base - 12 * prog * fluc + noise  # 从8改为12
+                elif f == 'HCO3': 
+                    val = base - 1.5 * prog * fluc + noise  # 从1改为1.5
+                elif f == 'GCS': 
+                    val = base - 0.8 * prog * fluc + noise  # 从0.5改为0.8
+                elif f == 'APTT': 
+                    val = base + 6 * prog * fluc + noise  # 从4改为6
+                elif f == 'O2Sat': 
+                    val = base - 2.0 * prog * fluc + noise  # 从1.5改为2.0
             
             # 限制范围
             val = max(LIMITS[f][0], min(LIMITS[f][1], val))
@@ -252,7 +273,7 @@ def generate_patient(pid, will_sepsis):
         else:
             consecutive_sepsis = 0
         
-        # 连续2小时满足条件才标记为阳性（避免单点波动）
+        # 连续2小时满足条件就标记为阳性（平衡灵敏度和特异度）
         record['label'] = 1 if consecutive_sepsis >= 2 else 0
         
         records.append(record)

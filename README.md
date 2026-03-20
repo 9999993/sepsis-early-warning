@@ -179,31 +179,44 @@ python3 app.py
 
 ## 📊 性能指标
 
-### 模型性能
+### 模型性能（基于qSOFA/TIME法则）
 
 | 指标 | 值 | 说明 |
 |------|-----|------|
-| **AUC-ROC** | 0.9064 | 综合判别能力 |
-| **F1-Score** | 0.7479 | 精确率与召回率平衡 |
-| **Precision** | 0.8225 | 预测准确率 |
-| **Recall** | 0.6857 | 检出率 |
+| **AUC-ROC** | 0.9962 | 综合判别能力 |
+| **F1-Score** | 0.8498 | 精确率与召回率平衡 |
+| **Precision** | 0.8465 | 预测准确率（85%的预警确实是脓毒症） |
+| **Recall** | 0.8531 | 检出率（检出85%的脓毒症患者） |
+
+### 临床指标特征差异
+
+| 指标 | 脓毒症患者 | 正常患者 | 差异 |
+|------|------------|----------|------|
+| 心率 | 93.49 bpm | 82.42 bpm | +13% |
+| 呼吸频率 | 19.85 次/分 | 16.14 次/分 | +23% |
+| 收缩压 | 108.51 mmHg | 119.53 mmHg | -9% |
+| 乳酸 | 2.53 mmol/L | 1.24 mmol/L | +104% |
+| 降钙素原 | 1.52 ng/mL | 0.16 ng/mL | +881% |
 
 ### 数据集统计
 
 | 数据集 | 患者数 | 记录数 | 阳性率 |
 |--------|--------|--------|--------|
-| 训练集 | 3,500 | 91,597 | 10.8% |
-| 验证集 | 750 | 20,012 | 12.3% |
-| 测试集 | 750 | 19,518 | 10.1% |
-| **总计** | **5,000** | **131,127** | **14.4%** |
+| 训练集 | 4,200 | 176,137 | 3.8% |
+| 验证集 | 900 | 37,893 | 3.9% |
+| 测试集 | 900 | 38,078 | 4.0% |
+| **总计** | **6,000** | **252,108** | **3.8%** |
 
 ### 性能图表
 
 #### ROC曲线与PR曲线
-![Performance](models/performance.png)
+![Performance](docs/performance.png)
 
 #### 预测分布与指标汇总
-![Prediction Analysis](models/prediction_analysis.png)
+![Prediction Analysis](docs/prediction_analysis.png)
+
+#### 特征重要性分析
+![Feature Importance](docs/feature_importance.png)
 
 ---
 
@@ -213,9 +226,13 @@ python3 app.py
 
 ![Homepage](docs/homepage.png)
 
-展示数据集统计、模型性能指标、系统架构等信息。
+展示：
+- 6,000名训练患者
+- 99.6% 测试集AUC
+- 12个临床指标说明
+- qSOFA/TIME法则说明
 
-### 监测页面 - 实时预警
+### 监测页面 - 正常患者
 
 ![Monitoring](docs/monitoring.png)
 
@@ -226,17 +243,21 @@ python3 app.py
 - 特征重要性分析
 - 预测原因说明
 
-### 监测页面 - 预警状态
+### 监测页面 - 脓毒症预警
 
 ![Monitoring Warning](docs/monitoring_warning.png)
 
-脓毒症患者预警状态，展示模型如何识别异常指标。
+脓毒症患者预警状态，展示：
+- 风险概率升高
+- 异常指标检测
+- qSOFA评分计算
+- 临床干预建议
 
 ---
 
 ## 🧠 模型架构
 
-### SepsisLSTM
+### SepsisLSTM（基于12个临床指标）
 
 ```python
 class SepsisLSTM(nn.Module):
@@ -249,13 +270,13 @@ class SepsisLSTM(nn.Module):
         self.lstm = nn.LSTM(
             input_dim, hidden_dim, num_layers,
             batch_first=True, bidirectional=True,
-            dropout=dropout
+            dropout=dropout if num_layers > 1 else 0
         )
         
         # 时序注意力
         self.attn = Attention(hidden_dim)
         
-        # 分类器（3层）
+        # 分类器
         self.clf = nn.Sequential(
             nn.Linear(hidden_dim * 2, hidden_dim),
             nn.ReLU(), nn.Dropout(0.5),
@@ -266,22 +287,38 @@ class SepsisLSTM(nn.Module):
         )
 ```
 
-### 输入特征
+### 输入特征（12个临床指标）
 
-| 特征 | 名称 | 单位 | 正常范围 |
-|------|------|------|----------|
-| HR | 心率 | bpm | 60-100 |
-| O2Sat | 血氧饱和度 | % | 95-100 |
-| Temp | 体温 | °C | 36.5-37.5 |
-| SBP | 收缩压 | mmHg | 90-140 |
-| MAP | 平均动脉压 | mmHg | 70-110 |
-| DBP | 舒张压 | mmHg | 60-90 |
-| Resp | 呼吸频率 | 次/分 | 12-20 |
-| BaseExcess | 碱剩余 | mmol/L | -2 to 2 |
-| HCO3 | 碳酸氢根 | mmol/L | 22-26 |
-| FiO2 | 吸入氧浓度 | - | 0.21-1.0 |
-| pH | pH值 | - | 7.35-7.45 |
-| PaCO2 | 二氧化碳分压 | mmHg | 35-45 |
+| 指标 | 英文 | 单位 | 正常范围 | 临床意义 |
+|------|------|------|----------|----------|
+| 心率 | HR | bpm | 60-100 | 感染导致心动过速 |
+| 呼吸频率 | Resp | 次/分 | 12-20 | qSOFA评分指标 |
+| 收缩压 | SBP | mmHg | 90-140 | qSOFA评分指标 |
+| 乳酸 | Lactate | mmol/L | 0.5-2.0 | 组织灌注指标 |
+| 降钙素原 | PCT | ng/mL | 0-0.5 | 细菌感染标志物 |
+| 淋巴细胞 | LYM | ×10⁹/L | 1.0-3.0 | 免疫功能指标 |
+| 白细胞 | WBC | ×10⁹/L | 4.0-10.0 | 感染经典指标 |
+| 尿量 | Urine | mL/h | 30-100 | 肾功能指标 |
+| 碳酸氢盐 | HCO3 | mmol/L | 22-26 | 酸碱平衡指标 |
+| GCS评分 | GCS | 分 | 13-15 | qSOFA评分指标 |
+| APTT | APTT | 秒 | 25-35 | 凝血功能指标 |
+| 血氧饱和度 | O2Sat | % | 95-100 | 氧合状态指标 |
+
+### 脓毒症判定标准（qSOFA + TIME法则）
+
+```
+满足以下任一条件即为脓毒症：
+
+条件1: qSOFA ≥ 2 + 感染证据
+  - qSOFA = 呼吸≥22 + 收缩压≤100 + GCS<15
+  - 感染证据 = 体温异常 + 白细胞异常 + PCT升高
+
+条件2: 乳酸 > 2 mmol/L + 器官功能障碍
+  - 器官功能障碍 = 尿量<30 或 GCS<13 或 SBP<90
+
+条件3: 体温异常 + 心率 > 90 + 呼吸 > 22
+  - 体温异常 = >38.3°C 或 <36°C
+```
 
 ---
 
